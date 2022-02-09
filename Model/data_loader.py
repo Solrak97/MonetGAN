@@ -1,22 +1,23 @@
 import tensorflow as tf
-from tensorflow import keras
-from tensorflow.keras import layers
-import tensorflow_addons as tfa
-import matplotlib.pyplot as plt
-import numpy as np
-
-GCS_PATH = 'Data'
-
-MONET_FILENAMES = tf.io.gfile.glob(str(GCS_PATH + '/monet_tfrec/*.tfrec'))
-print('Monet TFRecord Files:', len(MONET_FILENAMES))
-print(str(GCS_PATH + '/monet_tfrec/*.tfrec'))
-
-PHOTO_FILENAMES = tf.io.gfile.glob(str(GCS_PATH + '/photo_tfrec/*.tfrec'))
-print('Photo TFRecord Files:', len(PHOTO_FILENAMES))
-print(str(GCS_PATH + '/photo_tfrec/*.tfrec'))
 
 
+#   GPU SETUP
+
+try:
+    tpu = tf.distribute.cluster_resolver.TPUClusterResolver()
+    print('Device:', tpu.master())
+    tf.config.experimental_connect_to_cluster(tpu)
+    tf.tpu.experimental.initialize_tpu_system(tpu)
+    strategy = tf.distribute.experimental.TPUStrategy(tpu)
+except:
+    strategy = tf.distribute.get_strategy()
+
+
+#   Data Config
+
+AUTOTUNE = tf.data.experimental.AUTOTUNE
 IMAGE_SIZE = [256, 256]
+
 
 def decode_image(image):
     image = tf.image.decode_jpeg(image, channels=3)
@@ -40,21 +41,3 @@ def load_dataset(filenames, labeled=True, ordered=False):
     dataset = tf.data.TFRecordDataset(filenames)
     dataset = dataset.map(read_tfrecord, num_parallel_calls=AUTOTUNE)
     return dataset
-
-
-monet_ds = load_dataset(MONET_FILENAMES, labeled=True).batch(1)
-photo_ds = load_dataset(PHOTO_FILENAMES, labeled=True).batch(1)
-
-
-example_monet = next(iter(monet_ds))
-example_photo = next(iter(photo_ds))
-
-
-plt.subplot(121)
-plt.title('Photo')
-plt.imshow(example_photo[0] * 0.5 + 0.5)
-
-
-plt.subplot(122)
-plt.title('Monet')
-plt.imshow(example_monet[0] * 0.5 + 0.5)
