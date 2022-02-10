@@ -1,11 +1,5 @@
 import tensorflow as tf
 from tensorflow import keras
-from keras import layers
-import tensorflow_addons as tfa
-import matplotlib.pyplot as plt
-import numpy as np
-
-
 
 
 class CycleGan(keras.Model):
